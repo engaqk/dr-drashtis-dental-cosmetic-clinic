@@ -37,14 +37,14 @@ function showLoginModal() {
     document.getElementById('loginError').style.display = 'none';
     document.getElementById('loginForm').reset();
 
-    // Dynamically update the form label to ask for Email Address instead of Username
+    // Dynamically update the form label to allow Username again
     const userLabel = document.querySelector('label[for="username"]');
-    if (userLabel) userLabel.textContent = "Email Address";
+    if (userLabel) userLabel.textContent = "Username or Email";
 
     const userInput = document.getElementById('username');
     if (userInput) {
-        userInput.placeholder = "Enter email address";
-        userInput.type = "email";
+        userInput.placeholder = "Enter username or email";
+        userInput.type = "text"; // Changed from email so "admin" works
     }
 }
 
@@ -61,16 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // HTML input is still id="username", but we use it as the email for Firebase
-            const email = document.getElementById('username').value;
+            let emailOrUser = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('loginError');
 
             errorMsg.style.display = 'none';
 
+            // Map old "admin" username directly to the secure Firebase email account!
+            if (emailOrUser.toLowerCase() === 'admin') {
+                emailOrUser = 'drashtijani1812@gmail.com';
+            }
+
             try {
                 // Actual Firebase Login
-                await auth.signInWithEmailAndPassword(email, password);
+                await auth.signInWithEmailAndPassword(emailOrUser, password);
 
                 // Successful login
                 sessionStorage.setItem('staffLoggedIn', 'true');
@@ -87,9 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Firebase Login Error:", error);
 
                 // Format Firebase errors to be user friendly
-                let friendlyMessage = 'Invalid email or password';
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    friendlyMessage = 'Invalid email or password';
+                let friendlyMessage = 'Invalid username or password';
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-email') {
+                    friendlyMessage = 'Invalid username or password';
                 } else if (error.code === 'auth/too-many-requests') {
                     friendlyMessage = 'Too many attempts. Please try again later.';
                 } else {
