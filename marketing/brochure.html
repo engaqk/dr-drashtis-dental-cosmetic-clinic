@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental Clinic Brochure Generator</title>
+    <!-- Libraries for generating PDF and PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0d4b9f;
+            --accent: #4CAF50;
+            --text: #333;
+            --light: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #e9ecef;
+            color: var(--text);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .btn-download {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-download.secondary {
+            background: #555;
+        }
+
+        .btn-download:hover {
+            opacity: 0.9;
+        }
+
+        /* A4 Layout Wrapper */
+        #prochure-wrapper {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            /* Important for html2canvas to capture background */
+            background-color: #ffffff;
+        }
+
+        #prochure-content {
+            padding: 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        /* Content Styling */
+        header {
+            text-align: center;
+            padding-bottom: 30px;
+            border-bottom: 3px solid var(--accent);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 2.5em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary), #1a6fd6);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .hero h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.8em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 8px;
+            background: #fdfdfd;
+        }
+
+        .feature-icon {
+            color: var(--accent);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            background: var(--light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        footer {
+            margin-top: auto;
+            text-align: center;
+            color: #777;
+            font-size: 0.9em;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        footer a {
+            color: #0d4b9f;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .cta-box {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .cta-text {
+            color: #2e7d32;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        /* Make the whole page look clickable */
+        #prochure-wrapper {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="controls">
+        <button class="btn-download" onclick="generatePNG()">
+            <i class="fas fa-image"></i> Download as PNG Loop
+        </button>
+        <button class="btn-download secondary" onclick="generatePDF()">
+            <i class="fas fa-file-pdf"></i> Download as PDF
+        </button>
+        <div style="font-size: 12px; color: #666; width: 200px; text-align: center; margin-top: 5px;">
+            The page itself is a clickable link.
+        </div>
+    </div>
+
+    <!-- The Brochure Container -->
+    <div id="prochure-wrapper" title="Click to visit website">
+        <div id="prochure-content">
+            <header>
+                <h1>Digital Clinic Manager</h1>
+                <div class="subtitle">The Future of Dental Practice Management</div>
+            </header>
+
+            <div class="hero">
+                <h2>Your Clinic's Schedule is Full. <br>Shouldn't Managing It Be Automatic?</h2>
+                <p>Stop losing patients to busy phone lines. Start growing your practice with our intelligent,
+                    mobile-first management system.</p>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Booking System</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Double Bookings</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Mobile Ready</span>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="feature-title">Smart Scheduling</div>
+                    <div class="feature-desc">Algorithm that prevents double-booking instantly. No more "Let me check
+                        the register".</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <div class="feature-title">Mobile Command Center</div>
+                    <div class="feature-desc">Manage your entire clinic from your pocket. Check earnings, appointments,
+                        and patients from anywhere.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                    <div class="feature-title">No-Show Reduction</div>
+                    <div class="feature-desc">Instant "Add to Calendar" links for patients ensure they never forget an
+                        appointment.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+                    <div class="feature-title">Business Analytics</div>
+                    <div class="feature-desc">Visual charts showing your most profitable treatments and daily revenue
+                        metrics at a glance.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-database"></i></div>
+                    <div class="feature-title">Secure & Reliable</div>
+                    <div class="feature-desc">Cloud-based data storage with Hostinger powered database. Secure, fast,
+                        and always backed up.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-paint-brush"></i></div>
+                    <div class="feature-title">Premium Aesthetics</div>
+                    <div class="feature-desc">Beautiful, modern interface that builds trust with patients before they
+                        even walk in the door.</div>
+                </div>
+            </div>
+
+            <div class="cta-box">
+                <div class="cta-text">Turn your practice into a productivity machine.</div>
+                <p>Contact us today for a free demo and setup.</p>
+            </div>
+
+            <footer>
+                <p>&copy; 2026 Proconix Software. All rights reserved.</p>
+                <p><a href="https://www.proconixpmc.com/software" target="_blank">www.proconixpmc.com/software</a> |
+                    specialized in medical practice automation</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        function generatePDF() {
+            const element = document.getElementById('prochure-wrapper');
+            const opt = {
+                margin: 0,
+                filename: 'Dental_Clinic_Manager_Brochure.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function generatePNG() {
+            const element = document.getElementById('prochure-wrapper');
+            html2canvas(element, { scale: 1.5, useCORS: true }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'Dental_Clinic_Manager_Brochure.png';
+                link.href = imgData;
+                link.click();
+            });
+        }
+
+        // Global click handler for redirection
+        document.addEventListener('click', function (e) {
+            // Do not redirect if clicking buttons
+            if (e.target.closest('.controls')) {
+                return;
+            }
+            // If the user selects text, they might just be copying, so maybe only on explicit click?
+            // But requirement was "whatevr format", so click to open is safest logic.
+
+            // Redirect to the website
+            window.open('https://www.proconixpmc.com/software', '_blank');
+        });
+    </script>
+</body>
+
+</html>
